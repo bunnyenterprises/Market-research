@@ -1,0 +1,15 @@
+{
+  "name": "Market Pulse — Intelligence Terminal",
+  "short_name": "Market Pulse",
+  "description": "Live crypto signals, Indian market news intelligence, charts and paper trading.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#060A14",
+  "theme_color": "#060A14",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

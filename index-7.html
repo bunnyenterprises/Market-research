@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Market Pulse — Intelligence Terminal</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#060A14">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#060A14;
+    --panel:#0D1526;
+    --panel-2:#131E38;
+    --cyan:#22D3EE;
+    --gold:#FBBF24;
+    --green:#34D399;
+    --red:#F87171;
+    --violet:#A78BFA;
+    --text:#E6EAF2;
+    --muted:#7C87A0;
+    --line:#1C2A4A;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-serif;
+    background-image:radial-gradient(ellipse 80% 50% at 50% -10%, rgba(34,211,238,0.08), transparent);}
+  .mono{font-family:'IBM Plex Mono',monospace;}
+
+  /* Ticker */
+  .ticker-wrap{overflow:hidden;background:rgba(19,30,56,0.8);border-bottom:1px solid var(--line);white-space:nowrap;padding:9px 0;backdrop-filter:blur(8px);position:sticky;top:0;z-index:10;}
+  .ticker{display:inline-block;animation:scroll 45s linear infinite;font-family:'IBM Plex Mono',monospace;font-size:12.5px;}
+  .ticker span{margin-right:32px;color:var(--muted);}
+  .ticker span b{color:var(--text);margin-right:6px;}
+  @keyframes scroll{from{transform:translateX(0);}to{transform:translateX(-50%);}}
+
+  header{padding:26px 18px 6px;max-width:1180px;margin:0 auto;display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:12px;}
+  .brand .eyebrow{color:var(--cyan);font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;}
+  .brand h1{font-size:26px;font-weight:700;margin:4px 0 0;letter-spacing:-0.02em;}
+  .brand h1 em{font-style:normal;color:var(--cyan);}
+  .status{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);text-align:right;}
+  .status .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);margin-right:5px;animation:pulse 2s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.35;}}
+
+  .disclaimer{max-width:1180px;margin:14px auto 0;padding:11px 16px;background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.3);border-radius:10px;font-size:12.5px;color:#E8D5A0;line-height:1.5;}
+
+  main{max-width:1180px;margin:0 auto;padding:20px 18px 60px;display:grid;grid-template-columns:repeat(12,1fr);gap:16px;}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;position:relative;overflow:hidden;}
+  .card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(34,211,238,0.5),transparent);}
+  .card h2{font-size:15px;margin:0 0 2px;font-weight:600;letter-spacing:.01em;}
+  .card .sub{color:var(--muted);font-size:11.5px;margin-bottom:12px;font-family:'IBM Plex Mono',monospace;}
+  .span12{grid-column:span 12;} .span8{grid-column:span 8;} .span6{grid-column:span 6;} .span4{grid-column:span 4;}
+  @media (max-width:860px){.span8,.span6,.span4{grid-column:span 12;}}
+
+  /* Gauges row */
+  .gauge-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+  @media (max-width:600px){.gauge-grid{grid-template-columns:1fr;}}
+  .gauge{background:var(--panel-2);border:1px solid var(--line);border-radius:12px;padding:14px;text-align:center;}
+  .gauge .glabel{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;}
+  .gauge .gvalue{font-size:30px;font-weight:700;margin:6px 0 2px;font-family:'IBM Plex Mono',monospace;}
+  .gauge .gtag{font-size:12px;}
+  .bar{height:5px;border-radius:3px;background:var(--line);margin-top:10px;overflow:hidden;}
+  .bar i{display:block;height:100%;border-radius:3px;transition:width .8s ease;}
+
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th{text-align:left;color:var(--muted);font-weight:500;font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;padding:7px 5px;border-bottom:1px solid var(--line);font-family:'IBM Plex Mono',monospace;}
+  td{padding:9px 5px;border-bottom:1px solid rgba(28,42,74,0.5);vertical-align:middle;}
+  tr:last-child td{border-bottom:none;}
+  .coin{display:flex;align-items:center;gap:8px;}
+  .coin img{width:20px;height:20px;border-radius:50%;}
+  .up{color:var(--green);} .down{color:var(--red);}
+  .tag{font-family:'IBM Plex Mono',monospace;font-size:10px;padding:3px 8px;border-radius:4px;display:inline-block;letter-spacing:.03em;}
+  .tag.bull{background:rgba(52,211,153,0.12);color:var(--green);border:1px solid rgba(52,211,153,0.3);}
+  .tag.bear{background:rgba(248,113,113,0.12);color:var(--red);border:1px solid rgba(248,113,113,0.3);}
+  .tag.neutral{background:rgba(124,135,160,0.12);color:var(--muted);border:1px solid rgba(124,135,160,0.3);}
+  svg.spark{display:block;}
+
+  /* News */
+  .src-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
+  .src-tabs button{background:var(--panel-2);border:1px solid var(--line);color:var(--muted);font-family:'IBM Plex Mono',monospace;font-size:10.5px;padding:5px 11px;border-radius:6px;cursor:pointer;}
+  .src-tabs button.active{background:rgba(34,211,238,0.12);border-color:var(--cyan);color:var(--cyan);}
+  .news-item{display:block;padding:11px 0;border-bottom:1px solid rgba(28,42,74,0.5);color:var(--text);text-decoration:none;font-size:13.5px;line-height:1.45;}
+  .news-item:last-child{border-bottom:none;}
+  .news-item:hover .headline{color:var(--cyan);}
+  .news-meta{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:5px;}
+  .chip{font-family:'IBM Plex Mono',monospace;font-size:9.5px;padding:2px 7px;border-radius:4px;letter-spacing:.03em;}
+  .chip.src{background:rgba(167,139,250,0.12);color:var(--violet);}
+  .chip.pos{background:rgba(52,211,153,0.12);color:var(--green);}
+  .chip.neg{background:rgba(248,113,113,0.12);color:var(--red);}
+  .chip.neu{background:rgba(124,135,160,0.12);color:var(--muted);}
+  .chip.sector{background:rgba(251,191,36,0.1);color:var(--gold);}
+  .chip.time{color:var(--muted);padding-left:0;}
+
+  .stock-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid rgba(28,42,74,0.5);font-size:13.5px;}
+  .stock-row:last-child{border-bottom:none;}
+  .stock-row a{color:var(--cyan);text-decoration:none;font-family:'IBM Plex Mono',monospace;font-size:11.5px;}
+  .trend-item{display:flex;align-items:center;gap:9px;padding:8px 0;border-bottom:1px solid rgba(28,42,74,0.5);font-size:13px;}
+  .trend-item:last-child{border-bottom:none;}
+  .trend-item img{width:20px;height:20px;border-radius:50%;}
+  .trend-rank{font-family:'IBM Plex Mono',monospace;color:var(--muted);font-size:11px;width:18px;}
+  .note{font-size:11.5px;color:var(--muted);line-height:1.55;margin-top:10px;border-top:1px dashed var(--line);padding-top:10px;}
+  .loading{color:var(--muted);font-size:12.5px;padding:16px 0;text-align:center;font-family:'IBM Plex Mono',monospace;}
+  .notif-btn{background:rgba(34,211,238,0.12);border:1px solid var(--cyan);color:var(--cyan);font-family:'IBM Plex Mono',monospace;font-size:11px;padding:7px 14px;border-radius:8px;cursor:pointer;}
+  .notif-btn.on{background:rgba(52,211,153,0.12);border-color:var(--green);color:var(--green);cursor:default;}
+  .sig-item{padding:9px 0;border-bottom:1px solid rgba(28,42,74,0.5);font-size:12.5px;}
+  .sig-item:last-child{border-bottom:none;}
+  .sig-item .mono{font-size:10.5px;color:var(--muted);display:block;margin-top:2px;}
+  .chart-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
+  .chart-tabs button{background:var(--panel-2);border:1px solid var(--line);color:var(--muted);font-family:'IBM Plex Mono',monospace;font-size:10.5px;padding:5px 11px;border-radius:6px;cursor:pointer;}
+  .chart-tabs button.active{background:rgba(251,191,36,0.12);border-color:var(--gold);color:var(--gold);}
+  #tv-chart{height:420px;border-radius:10px;overflow:hidden;border:1px solid var(--line);}
+  .pt-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px;}
+  @media (max-width:600px){.pt-stats{grid-template-columns:repeat(2,1fr);}}
+  .pt-stat{background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:11px;text-align:center;}
+  .pt-stat .l{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;}
+  .pt-stat .v{font-family:'IBM Plex Mono',monospace;font-size:17px;font-weight:600;margin-top:4px;}
+  .pt-reset{background:none;border:1px solid var(--line);color:var(--muted);font-family:'IBM Plex Mono',monospace;font-size:10px;padding:5px 10px;border-radius:6px;cursor:pointer;float:right;}
+</style>
+</head>
+<body>
+
+<div class="ticker-wrap"><div class="ticker" id="ticker"><span class="loading">Connecting to live feeds…</span></div></div>
+
+<header>
+  <div class="brand">
+    <div class="eyebrow">Market Pulse · v2</div>
+    <h1>Intelligence <em>Terminal</em></h1>
+  </div>
+  <div class="status"><span class="dot"></span>LIVE · auto-refresh 60s<br><span id="clock"></span><br>
+    <button class="notif-btn" id="notif-btn" onclick="enableNotifs()" style="margin-top:6px;">🔔 ENABLE SIGNAL ALERTS</button>
+  </div>
+</header>
+
+<div class="disclaimer">Signals and sentiment tags are computed heuristics from public data — for research, not investment advice. No system predicts markets without fail. Risk only what you can afford to lose.</div>
+
+<main>
+  <!-- Sentiment gauges -->
+  <div class="card span12">
+    <h2>Market mood</h2>
+    <div class="sub">// crypto fear & greed (live) · news sentiment (computed from headlines below)</div>
+    <div class="gauge-grid">
+      <div class="gauge">
+        <div class="glabel">Crypto Fear &amp; Greed</div>
+        <div class="gvalue" id="fng-val">–</div>
+        <div class="gtag" id="fng-tag">loading…</div>
+        <div class="bar"><i id="fng-bar" style="width:0%;background:var(--gold);"></i></div>
+      </div>
+      <div class="gauge">
+        <div class="glabel">News Sentiment Score</div>
+        <div class="gvalue" id="sent-val">–</div>
+        <div class="gtag" id="sent-tag">analyzing headlines…</div>
+        <div class="bar"><i id="sent-bar" style="width:0%;background:var(--cyan);"></i></div>
+      </div>
+      <div class="gauge">
+        <div class="glabel">Crypto Breadth (24h)</div>
+        <div class="gvalue" id="breadth-val">–</div>
+        <div class="gtag" id="breadth-tag">of top 12 coins rising</div>
+        <div class="bar"><i id="breadth-bar" style="width:0%;background:var(--green);"></i></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Live chart -->
+  <div class="card span8">
+    <h2>Live chart</h2>
+    <div class="sub">// TradingView · crypto + NSE indices · tap a symbol to switch</div>
+    <div class="chart-tabs" id="chart-tabs"></div>
+    <div id="tv-chart"></div>
+  </div>
+
+  <!-- Signal alerts feed -->
+  <div class="card span4">
+    <h2>Signal alerts</h2>
+    <div class="sub">// fires when a coin's signal flips · notifications if enabled</div>
+    <div id="sig-feed"><div class="loading">Watching for signal changes…<br><br>Alerts appear here (and as phone notifications) when any coin flips to BULLISH or BEARISH.</div></div>
+  </div>
+
+  <!-- Crypto signals -->
+  <div class="card span8">
+    <h2>Crypto signal board</h2>
+    <div class="sub">// live via CoinGecko · momentum + RSI-14 heuristic · 7d sparkline</div>
+    <table>
+      <thead><tr><th>Asset</th><th>Price ₹</th><th>24h</th><th>7d</th><th>RSI</th><th>Chart</th><th>Signal</th></tr></thead>
+      <tbody id="crypto-body"><tr><td colspan="7" class="loading">Fetching market data…</td></tr></tbody>
+    </table>
+  </div>
+
+  <!-- Trending -->
+  <div class="card span4">
+    <h2>Trending searches</h2>
+    <div class="sub">// what the crowd is looking at right now</div>
+    <div id="trending"><div class="loading">Loading…</div></div>
+  </div>
+
+  <!-- Paper trading -->
+  <div class="card span12">
+    <button class="pt-reset" onclick="ptReset()">RESET ₹1,00,000</button>
+    <h2>Paper trading — signal backtest</h2>
+    <div class="sub">// virtual ₹1,00,000 · auto-buys 10% on BULLISH flip · exits on BEARISH flip, −5% stop, or +8% target · zero real money</div>
+    <div class="pt-stats">
+      <div class="pt-stat"><div class="l">Portfolio value</div><div class="v" id="pt-value">₹1,00,000</div></div>
+      <div class="pt-stat"><div class="l">Total P&amp;L</div><div class="v" id="pt-pnl">₹0</div></div>
+      <div class="pt-stat"><div class="l">Win rate</div><div class="v" id="pt-winrate">–</div></div>
+      <div class="pt-stat"><div class="l">Trades (open/closed)</div><div class="v" id="pt-count">0 / 0</div></div>
+    </div>
+    <table>
+      <thead><tr><th>Asset</th><th>Side</th><th>Entry ₹</th><th>Now / Exit ₹</th><th>P&amp;L</th><th>Status</th><th>Reason</th></tr></thead>
+      <tbody id="pt-body"><tr><td colspan="7" class="loading">No paper trades yet — the engine opens one automatically when a coin flips BULLISH. Leave this page deployed and check back through the day.</td></tr></tbody>
+    </table>
+    <div class="note">History saves in this browser only — always open the same GitHub Pages link on the same phone browser, or the record resets. After 2–4 weeks, the win rate and P&amp;L here tell you honestly whether these signals deserve real money.</div>
+  </div>
+
+  <!-- News intelligence -->
+  <div class="card span8">
+    <h2>News intelligence feed</h2>
+    <div class="sub">// live RSS · auto sentiment + sector impact tagging</div>
+    <div class="src-tabs" id="src-tabs"></div>
+    <div id="news-list"><div class="loading">Loading headlines…</div></div>
+  </div>
+
+  <!-- Stocks -->
+  <div class="card span4">
+    <h2>NSE watchlist</h2>
+    <div class="sub">// tap for live chart · Upstox API slot ready</div>
+    <div id="stock-list"></div>
+    <div class="note">Live quotes need your Upstox API key + a small auth redirect endpoint. The <span class="mono">fetchStockData()</span> function in this file is the slot to wire it into.</div>
+  </div>
+</main>
+
+<script>
+const INR = n => n?.toLocaleString('en-IN', {maximumFractionDigits: n < 100 ? 2 : 0});
+setInterval(()=>{document.getElementById('clock').textContent = new Date().toLocaleTimeString('en-IN');},1000);
+
+/* ================= CRYPTO ================= */
+async function loadCrypto(){
+  const url = 'https://api.coingecko.com/api/v3/coins/markets?vs_currency=inr&order=market_cap_desc&per_page=12&sparkline=true&price_change_percentage=24h,7d';
+  try{
+    const coins = await (await fetch(url)).json();
+    renderTicker(coins); renderCryptoTable(coins); renderBreadth(coins); checkSignalFlips(coins); ptUpdate(coins);
+  }catch(e){
+    document.getElementById('crypto-body').innerHTML = '<tr><td colspan="7" class="loading">Feed unreachable — reload in a minute.</td></tr>';
+  }
+}
+function rsi14(prices){
+  if(!prices || prices.length < 15) return 50;
+  const p = prices.slice(-15); let g=0,l=0;
+  for(let i=1;i<p.length;i++){const d=p[i]-p[i-1]; if(d>0)g+=d; else l-=d;}
+  if(l===0) return 100;
+  return 100 - 100/(1+(g/14)/(l/14));
+}
+function signalFor(c24,c7,rsi){
+  let s=0;
+  if(c24>1)s++; if(c24<-1)s--;
+  if(c7>3)s++; if(c7<-3)s--;
+  if(rsi>65)s--; if(rsi<35)s++;
+  return s>=2?{label:'BULLISH',cls:'bull'}:s<=-2?{label:'BEARISH',cls:'bear'}:{label:'NEUTRAL',cls:'neutral'};
+}
+function sparkSVG(prices){
+  if(!prices||prices.length<2) return '';
+  const w=80,h=24,min=Math.min(...prices),max=Math.max(...prices),r=(max-min)||1,st=w/(prices.length-1);
+  const pts=prices.map((p,i)=>`${(i*st).toFixed(1)},${(h-((p-min)/r)*h).toFixed(1)}`).join(' ');
+  const col=prices[prices.length-1]>=prices[0]?'#34D399':'#F87171';
+  return `<svg class="spark" width="${w}" height="${h}"><polyline points="${pts}" fill="none" stroke="${col}" stroke-width="1.5"/></svg>`;
+}
+function renderCryptoTable(coins){
+  document.getElementById('crypto-body').innerHTML = coins.map(c=>{
+    const spark=c.sparkline_in_7d?.price||[], rsi=rsi14(spark);
+    const c24=c.price_change_percentage_24h_in_currency??0, c7=c.price_change_percentage_7d_in_currency??0;
+    const sig=signalFor(c24,c7,rsi);
+    const rsiCol = rsi>65?'var(--red)':rsi<35?'var(--green)':'var(--muted)';
+    return `<tr>
+      <td><div class="coin"><img src="${c.image}" alt=""><div><div style="font-size:12.5px;">${c.name}</div><div class="mono" style="color:var(--muted);font-size:10px;">${c.symbol.toUpperCase()}</div></div></div></td>
+      <td class="mono">₹${INR(c.current_price)}</td>
+      <td class="mono ${c24>=0?'up':'down'}">${c24>=0?'+':''}${c24.toFixed(1)}%</td>
+      <td class="mono ${c7>=0?'up':'down'}">${c7>=0?'+':''}${c7.toFixed(1)}%</td>
+      <td class="mono" style="color:${rsiCol};">${rsi.toFixed(0)}</td>
+      <td>${sparkSVG(spark)}</td>
+      <td><span class="tag ${sig.cls}">${sig.label}</span></td>
+    </tr>`;
+  }).join('');
+}
+function renderTicker(coins){
+  const html = coins.slice(0,9).map(c=>{
+    const ch=c.price_change_percentage_24h??0;
+    return `<span><b>${c.symbol.toUpperCase()}</b>₹${INR(c.current_price)} <span class="${ch>=0?'up':'down'}">${ch>=0?'▲':'▼'}${Math.abs(ch).toFixed(1)}%</span></span>`;
+  }).join('');
+  document.getElementById('ticker').innerHTML = html+html;
+}
+function renderBreadth(coins){
+  const up = coins.filter(c=>(c.price_change_percentage_24h??0)>0).length;
+  const pct = Math.round(up/coins.length*100);
+  document.getElementById('breadth-val').textContent = up+'/'+coins.length;
+  document.getElementById('breadth-bar').style.width = pct+'%';
+  document.getElementById('breadth-bar').style.background = pct>=50?'var(--green)':'var(--red)';
+}
+
+/* ================= FEAR & GREED ================= */
+async function loadFNG(){
+  try{
+    const d = await (await fetch('https://api.alternative.me/fng/?limit=1')).json();
+    const v = parseInt(d.data[0].value), label = d.data[0].value_classification;
+    document.getElementById('fng-val').textContent = v;
+    document.getElementById('fng-tag').textContent = label;
+    const bar = document.getElementById('fng-bar');
+    bar.style.width = v+'%';
+    bar.style.background = v>55?'var(--green)':v<45?'var(--red)':'var(--gold)';
+  }catch(e){ document.getElementById('fng-tag').textContent = 'feed unavailable'; }
+}
+
+/* ================= TRENDING ================= */
+async function loadTrending(){
+  try{
+    const d = await (await fetch('https://api.coingecko.com/api/v3/search/trending')).json();
+    document.getElementById('trending').innerHTML = (d.coins||[]).slice(0,7).map((c,i)=>
+      `<div class="trend-item"><span class="trend-rank">${i+1}</span><img src="${c.item.small}" alt=""><div><div style="font-size:12.5px;">${c.item.name}</div><div class="mono" style="color:var(--muted);font-size:10px;">${c.item.symbol} · rank #${c.item.market_cap_rank??'–'}</div></div></div>`
+    ).join('');
+  }catch(e){ document.getElementById('trending').innerHTML = '<div class="loading">Feed unavailable</div>'; }
+}
+
+/* ================= NEWS + SENTIMENT ENGINE ================= */
+const POS_WORDS = ['surge','rally','gain','jump','soar','rise','record','high','profit','beat','strong','boost','upgrade','buy','bullish','growth','recover','positive','up ','wins','approval','deal','expansion'];
+const NEG_WORDS = ['fall','drop','crash','plunge','slump','loss','decline','weak','miss','cut','downgrade','sell','bearish','fraud','probe','fear','concern','risk','warn','down ','slip','tumble','pressure','default','penalty'];
+const SECTORS = {
+  'Banking':['bank','hdfc','icici','sbi','axis','kotak','rbi','nbfc','lender','credit'],
+  'IT':['infosys','tcs','wipro','tech mahindra','hcl','it sector','software','saas'],
+  'Auto':['tata motors','maruti','mahindra','bajaj auto','hero','ev ','auto sales','vehicle'],
+  'Pharma':['pharma','sun pharma','cipla','dr reddy','biocon','drug','fda'],
+  'Energy':['reliance','ongc','oil','gas','coal','power','ntpc','adani green','solar'],
+  'Crypto':['bitcoin','ethereum','crypto','btc','eth','blockchain','binance','defi'],
+  'Metals':['tata steel','jsw','hindalco','vedanta','steel','metal','copper','zinc'],
+  'Macro':['rbi','gdp','inflation','budget','fed','repo','rupee','fii','dii','sensex','nifty'],
+};
+function analyze(title){
+  const t = ' '+title.toLowerCase()+' ';
+  let score = 0;
+  POS_WORDS.forEach(w=>{if(t.includes(w))score++;});
+  NEG_WORDS.forEach(w=>{if(t.includes(w))score--;});
+  const sectors = Object.entries(SECTORS).filter(([_,kws])=>kws.some(k=>t.includes(k))).map(([s])=>s).slice(0,2);
+  return {sentiment: score>0?'pos':score<0?'neg':'neu', sectors};
+}
+
+const NEWS_SOURCES = [
+  {id:'all', label:'ALL'},
+  {id:'mc', label:'MONEYCONTROL', rss:'https://www.moneycontrol.com/rss/marketreports.xml'},
+  {id:'et', label:'ET MARKETS', rss:'https://economictimes.indiatimes.com/markets/rssfeeds/1977021501.cms'},
+  {id:'lm', label:'LIVEMINT', rss:'https://www.livemint.com/rss/markets'},
+];
+let allArticles = [], activeSrc = 'all';
+
+async function fetchFeed(src){
+  try{
+    const d = await (await fetch('https://api.rss2json.com/v1/api.json?rss_url='+encodeURIComponent(src.rss))).json();
+    if(d.status!=='ok') return [];
+    return (d.items||[]).slice(0,12).map(it=>({
+      src:src.id, srcLabel:src.label, title:it.title, link:it.link,
+      date: it.pubDate?new Date(it.pubDate):null, ...analyze(it.title)
+    }));
+  }catch(e){ return []; }
+}
+function timeAgo(d){
+  if(!d) return '';
+  const m=Math.floor((Date.now()-d.getTime())/60000);
+  if(m<60) return m+'m';
+  const h=Math.floor(m/60);
+  return h<24 ? h+'h' : Math.floor(h/24)+'d';
+}
+function renderNewsList(){
+  const list = activeSrc==='all'?allArticles:allArticles.filter(a=>a.src===activeSrc);
+  if(!list.length){
+    document.getElementById('news-list').innerHTML =
+      '<div class="loading">RSS proxy rate-limited — direct sources:<br><br>'+
+      '<a href="https://www.moneycontrol.com/news/business/markets/" target="_blank" style="color:var(--cyan);">Moneycontrol →</a> &nbsp; '+
+      '<a href="https://economictimes.indiatimes.com/markets" target="_blank" style="color:var(--cyan);">ET Markets →</a> &nbsp; '+
+      '<a href="https://www.livemint.com/market" target="_blank" style="color:var(--cyan);">Livemint →</a></div>';
+    return;
+  }
+  const SENT_LABEL={pos:'▲ POSITIVE',neg:'▼ NEGATIVE',neu:'– NEUTRAL'};
+  document.getElementById('news-list').innerHTML = list.slice(0,25).map(a=>
+    `<a class="news-item" href="${a.link}" target="_blank" rel="noopener">
+      <span class="headline">${a.title}</span>
+      <span class="news-meta">
+        <span class="chip src">${a.srcLabel}</span>
+        <span class="chip ${a.sentiment}">${SENT_LABEL[a.sentiment]}</span>
+        ${a.sectors.map(s=>`<span class="chip sector">${s.toUpperCase()}</span>`).join('')}
+        <span class="chip time">${timeAgo(a.date)} ago</span>
+      </span>
+    </a>`
+  ).join('');
+}
+function renderTabs(){
+  document.getElementById('src-tabs').innerHTML = NEWS_SOURCES.map(s=>
+    `<button class="${s.id===activeSrc?'active':''}" onclick="setSrc('${s.id}')">${s.label}</button>`).join('');
+}
+function setSrc(id){activeSrc=id;renderTabs();renderNewsList();}
+
+function renderSentGauge(){
+  const scored = allArticles.filter(a=>a.sentiment!=='neu');
+  if(!scored.length){document.getElementById('sent-tag').textContent='no scored headlines yet';return;}
+  const pos = allArticles.filter(a=>a.sentiment==='pos').length;
+  const neg = allArticles.filter(a=>a.sentiment==='neg').length;
+  const pct = Math.round(pos/(pos+neg)*100);
+  document.getElementById('sent-val').textContent = pct+'%';
+  document.getElementById('sent-tag').textContent = pct>=60?'headlines leaning positive':pct<=40?'headlines leaning negative':'mixed headlines';
+  const bar=document.getElementById('sent-bar');
+  bar.style.width=pct+'%';
+  bar.style.background = pct>=60?'var(--green)':pct<=40?'var(--red)':'var(--cyan)';
+}
+async function loadNews(){
+  const results = await Promise.all(NEWS_SOURCES.filter(s=>s.rss).map(fetchFeed));
+  allArticles = results.flat().sort((a,b)=>(b.date||0)-(a.date||0));
+  renderTabs(); renderNewsList(); renderSentGauge();
+}
+
+/* ================= LIVE CHART (TradingView free widget) ================= */
+const CHART_SYMBOLS = [
+  {label:'BTC/INR', tv:'BINANCE:BTCUSDT'},
+  {label:'ETH', tv:'BINANCE:ETHUSDT'},
+  {label:'NIFTY 50', tv:'NSE:NIFTY'},
+  {label:'BANK NIFTY', tv:'NSE:BANKNIFTY'},
+  {label:'RELIANCE', tv:'NSE:RELIANCE'},
+  {label:'HDFC BANK', tv:'NSE:HDFCBANK'},
+];
+let activeChart = 0;
+function renderChartTabs(){
+  document.getElementById('chart-tabs').innerHTML = CHART_SYMBOLS.map((s,i)=>
+    `<button class="${i===activeChart?'active':''}" onclick="setChart(${i})">${s.label}</button>`).join('');
+}
+function setChart(i){
+  activeChart = i; renderChartTabs();
+  document.getElementById('tv-chart').innerHTML = '';
+  new TradingView.widget({
+    container_id:'tv-chart', symbol:CHART_SYMBOLS[i].tv, autosize:true,
+    interval:'15', theme:'dark', style:'1', locale:'in',
+    toolbar_bg:'#0D1526', hide_side_toolbar:true, allow_symbol_change:false,
+    studies:['RSI@tv-basicstudies'],
+  });
+}
+
+/* ================= NOTIFICATIONS + SIGNAL FLIP DETECTION ================= */
+let prevSignals = {};   // symbol -> label, persists only for this session
+let sigFeed = [];
+
+function enableNotifs(){
+  if(!('Notification' in window)){ alert('This browser does not support notifications. Try Chrome.'); return; }
+  Notification.requestPermission().then(p=>{
+    if(p==='granted'){
+      const b=document.getElementById('notif-btn');
+      b.textContent='🔔 ALERTS ON'; b.classList.add('on');
+      new Notification('Market Pulse', {body:'Signal alerts enabled. You\'ll be notified when a coin flips BULLISH or BEARISH.'});
+    }
+  });
+}
+
+function checkSignalFlips(coins){
+  coins.forEach(c=>{
+    const spark=c.sparkline_in_7d?.price||[];
+    const sig=signalFor(c.price_change_percentage_24h_in_currency??0, c.price_change_percentage_7d_in_currency??0, rsi14(spark));
+    const sym=c.symbol.toUpperCase();
+    const prev=prevSignals[sym];
+    if(prev && prev!==sig.label && sig.label!=='NEUTRAL'){
+      const entry={sym, name:c.name, from:prev, to:sig.label, price:c.current_price, at:new Date()};
+      sigFeed.unshift(entry);
+      sigFeed=sigFeed.slice(0,15);
+      renderSigFeed();
+      if(Notification.permission==='granted'){
+        new Notification(`${sym} flipped ${sig.label}`, {body:`${c.name} · ₹${INR(c.current_price)} · was ${prev}. Heuristic signal — verify before acting.`});
+      }
+    }
+    prevSignals[sym]=sig.label;
+  });
+}
+function renderSigFeed(){
+  if(!sigFeed.length) return;
+  document.getElementById('sig-feed').innerHTML = sigFeed.map(e=>{
+    const cls=e.to==='BULLISH'?'bull':'bear';
+    return `<div class="sig-item"><span class="tag ${cls}">${e.to}</span> <b>${e.sym}</b> ₹${INR(e.price)}<span class="mono">${e.name} · was ${e.from} · ${e.at.toLocaleTimeString('en-IN')}</span></div>`;
+  }).join('');
+}
+
+
+/* ================= PAPER TRADING ENGINE ================= */
+const PT_KEY='mp_paper_v1', PT_START=100000, PT_ALLOC=0.10, PT_STOP=-5, PT_TARGET=8;
+function ptLoad(){
+  try{ const d=localStorage.getItem(PT_KEY); if(d) return JSON.parse(d); }catch(e){}
+  return {cash:PT_START, open:[], closed:[]};
+}
+function ptSave(){ try{ localStorage.setItem(PT_KEY, JSON.stringify(PT)); }catch(e){} }
+let PT = ptLoad();
+function ptReset(){
+  if(!confirm('Reset paper portfolio to ₹1,00,000 and erase trade history?')) return;
+  PT={cash:PT_START, open:[], closed:[]}; ptSave();
+  document.getElementById('pt-body').innerHTML='<tr><td colspan="7" class="loading">Portfolio reset. Waiting for the next BULLISH flip…</td></tr>';
+  ptRender({});
+}
+function ptUpdate(coins){
+  const px={}; coins.forEach(c=>px[c.symbol.toUpperCase()]=c.current_price);
+  // Manage open positions: stop / target / bearish flip
+  PT.open = PT.open.filter(pos=>{
+    const p = px[pos.sym]; if(!p) return true;
+    const pnlPct = (p-pos.entry)/pos.entry*100;
+    let exitReason = null;
+    if(pnlPct <= PT_STOP) exitReason='STOP −5%';
+    else if(pnlPct >= PT_TARGET) exitReason='TARGET +8%';
+    else if(prevSignals[pos.sym]==='BEARISH') exitReason='BEARISH flip';
+    if(exitReason){
+      const proceeds = pos.qty*p;
+      PT.cash += proceeds;
+      PT.closed.unshift({...pos, exit:p, pnl:proceeds-pos.cost, pnlPct, reason:exitReason, closedAt:Date.now()});
+      PT.closed = PT.closed.slice(0,50);
+      if(Notification.permission==='granted') new Notification('Paper trade closed: '+pos.sym, {body:exitReason+' · P&L ₹'+INR(proceeds-pos.cost)+' ('+pnlPct.toFixed(1)+'%)'});
+      return false;
+    }
+    return true;
+  });
+  // Open new positions on BULLISH signal (max 5 open, no duplicates)
+  coins.forEach(c=>{
+    const sym=c.symbol.toUpperCase();
+    if(prevSignals[sym]!=='BULLISH') return;
+    if(PT.open.some(o=>o.sym===sym)) return;
+    if(PT.open.length>=5) return;
+    const equity = PT.cash + PT.open.reduce((s,o)=>s+o.cost,0);
+    const budget = equity * PT_ALLOC;
+    if(PT.cash < budget) return;
+    const qty = budget/c.current_price;
+    PT.cash -= budget;
+    PT.open.push({sym, name:c.name, entry:c.current_price, qty, cost:budget, openedAt:Date.now()});
+    if(Notification.permission==='granted') new Notification('Paper trade opened: '+sym, {body:'Bought ₹'+INR(budget)+' at ₹'+INR(c.current_price)+' · stop −5% / target +8%'});
+  });
+  ptSave(); ptRender(px);
+}
+function ptRender(px){
+  const openVal = PT.open.reduce((s,o)=>s+o.qty*(px[o.sym]||o.entry),0);
+  const total = PT.cash + openVal;
+  const pnl = total - PT_START;
+  const wins = PT.closed.filter(t=>t.pnl>0).length;
+  document.getElementById('pt-value').textContent = '₹'+INR(total);
+  const pnlEl = document.getElementById('pt-pnl');
+  pnlEl.textContent = (pnl>=0?'+₹':'−₹')+INR(Math.abs(pnl));
+  pnlEl.className = 'v '+(pnl>=0?'up':'down');
+  document.getElementById('pt-winrate').textContent = PT.closed.length? Math.round(wins/PT.closed.length*100)+'%' : '–';
+  document.getElementById('pt-count').textContent = PT.open.length+' / '+PT.closed.length;
+  const rows = [
+    ...PT.open.map(o=>{
+      const p=px[o.sym]||o.entry, pl=o.qty*p-o.cost, plPct=(p-o.entry)/o.entry*100;
+      return '<tr><td><b>'+o.sym+'</b> <span class="mono" style="color:var(--muted);font-size:10px;">'+o.name+'</span></td><td><span class="tag bull">LONG</span></td><td class="mono">₹'+INR(o.entry)+'</td><td class="mono">₹'+INR(p)+'</td><td class="mono '+(pl>=0?'up':'down')+'">'+(pl>=0?'+':'')+'₹'+INR(pl)+' ('+plPct.toFixed(1)+'%)</td><td class="mono" style="color:var(--cyan);">OPEN</td><td class="mono" style="color:var(--muted);font-size:10px;">stop −5% / tgt +8%</td></tr>';
+    }),
+    ...PT.closed.slice(0,10).map(t=>
+      '<tr style="opacity:.65;"><td><b>'+t.sym+'</b></td><td><span class="tag neutral">CLOSED</span></td><td class="mono">₹'+INR(t.entry)+'</td><td class="mono">₹'+INR(t.exit)+'</td><td class="mono '+(t.pnl>=0?'up':'down')+'">'+(t.pnl>=0?'+':'')+'₹'+INR(t.pnl)+' ('+t.pnlPct.toFixed(1)+'%)</td><td class="mono">'+new Date(t.closedAt).toLocaleDateString('en-IN')+'</td><td class="mono" style="font-size:10px;">'+t.reason+'</td></tr>')
+  ];
+  if(rows.length) document.getElementById('pt-body').innerHTML = rows.join('');
+}
+
+function fetchStockData(){
+  // TODO: wire Upstox API here — needs access token from OAuth flow.
+  return [
+    {name:'Nifty 50', symbol:'NSEI'},{name:'Bank Nifty', symbol:'NSEBANK'},
+    {name:'Reliance', symbol:'RELIANCE.NS'},{name:'HDFC Bank', symbol:'HDFCBANK.NS'},
+    {name:'Tata Motors', symbol:'TATAMOTORS.NS'},{name:'Infosys', symbol:'INFY.NS'},
+    {name:'Adani Ent', symbol:'ADANIENT.NS'},{name:'SBI', symbol:'SBIN.NS'},
+  ];
+}
+function renderStocks(){
+  document.getElementById('stock-list').innerHTML = fetchStockData().map(s=>
+    `<div class="stock-row"><span>${s.name}</span><a href="https://www.google.com/finance/quote/${encodeURIComponent(s.symbol)}" target="_blank" rel="noopener">CHART →</a></div>`).join('');
+}
+
+loadCrypto(); loadFNG(); loadTrending(); loadNews(); renderStocks();
+setInterval(loadCrypto, 60000);
+setInterval(loadNews, 300000);
+setInterval(loadFNG, 600000);
+
+// TradingView loads async, then boot the chart
+const tvScript = document.createElement('script');
+tvScript.src = 'https://s3.tradingview.com/tv.js';
+tvScript.onload = ()=>{ renderChartTabs(); setChart(0); };
+tvScript.onerror = ()=>{ document.getElementById('tv-chart').innerHTML = '<div class="loading">Chart library blocked — check connection or open <a href="https://www.tradingview.com/chart/?symbol=NSE:NIFTY" target="_blank" style="color:var(--cyan);">TradingView directly →</a></div>'; };
+document.head.appendChild(tvScript);
+
+// PWA: register service worker (makes the site installable as an app)
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+</script>
+</body>
+</html>
